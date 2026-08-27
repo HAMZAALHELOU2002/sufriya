@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. إنشاء مطعم تجريبي
         $restaurant = Restaurant::create([
-            'name' => 'مطعم الوفاء للوجبات السريعة',
+            'name' => 'مطعم حمزة للوجبات السريعة',
             'status' => 'active',
             'assumed_commission_rate' => 15.00,
         ]);
@@ -51,18 +51,19 @@ class DatabaseSeeder extends Seeder
         // 4. إنشاء تصنيفات المنيو
         $category = MenuCategory::create([
             'restaurant_id' => $restaurant->id,
-            'name' => 'برجر وبطاطس',
+            'name' => ' مسخن فلسطيني',
             'sort_order' => 1,
             'is_active' => true,
         ]);
+     
 
         // 5. إنشاء وجبة في المنيو
         $item = MenuItem::create([
             'restaurant_id' => $restaurant->id,
             'category_id' => $category->id,
-            'name' => 'كرسبي برجر',
-            'description' => 'دجاج مقرمش مع جبنة شيدر وصوص خاص',
-            'price' => 3.500,
+            'name' => 'شكشوكة',
+            'description' => 'وجبة لذيذة من البيض والخضار',
+            'price' => 10,
             'is_available' => true,
         ]);
 
@@ -70,7 +71,7 @@ class DatabaseSeeder extends Seeder
         $customer = Customer::create([
             'restaurant_id' => $restaurant->id,
             'wa_phone_number' => '96890000000',
-            'name' => 'أحمد علي',
+            'name' => ' اشرف كخة وعلي لوكة',
         ]);
         //اكثر من خطا ظهر بسبب عدم قبول القيمة payment and payment_status
        // 7. إنشاء طلب تجريبي
@@ -81,7 +82,7 @@ class DatabaseSeeder extends Seeder
     'status'           => 'pending_acceptance', // القيمة الصحيحة
     'payment_method'   => 'cash',               // تم التعديل من cod إلى cash
     'payment_status'   => 'pending_cash',        // القيمة الصحيحة
-    'total_amount'     => 3.500,
+    'total_amount'     => 10.0,
 ]);
 
         // 8. إضافة تفاصيل الطلب
@@ -91,7 +92,7 @@ class DatabaseSeeder extends Seeder
             'item_name' => $item->name,
             'unit_price' => $item->price,
             'quantity' => 1,
-            'subtotal' => 3.500,
+            'subtotal' => 10,
         ]);
     }
 }
