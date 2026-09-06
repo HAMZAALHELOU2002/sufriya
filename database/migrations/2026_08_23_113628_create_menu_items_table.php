@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('menu_items', function (Blueprint $table) {
             $table->id();
              $table->foreignId('restaurant_id')->constrained()->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('menu_categories')->onDelete('cascade');
+            // $table->foreignId('category_id')->constrained('menu_categories')->onDelete('cascade');
+            $table->unsignedBigInteger('category_id')->nullable();
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 8, 3);

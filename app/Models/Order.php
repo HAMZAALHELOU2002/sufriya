@@ -10,15 +10,23 @@ class Order extends Model
 {
     use BelongsToRestaurant;
     protected $fillable = [
-        'restaurant_id', 'customer_id', 'fulfillment_type', 'status',
-        'payment_method', 'payment_status', 'total_amount',
-        'outbound_msg_count', 'notified', 'payment_reference', 'cancellation_reason'
-    ];
-
+    'restaurant_id',
+    'customer_id',
+    'customer_name',
+    'customer_phone',
+    'fulfillment_type',
+    'status',
+    'payment_method',
+    'payment_status',
+    'total_amount',
+    'items',
+    'payment_reference'
+];
     protected $casts = [
         'total_amount' => 'decimal:3',
         'notified' => 'boolean',
         'outbound_msg_count' => 'integer',
+        'items' => 'array',
     ];
 
     public function restaurant(): BelongsTo
@@ -40,4 +48,6 @@ class Order extends Model
     {
         return $this->hasMany(OrderStatusHistory::class);
     }
+
+
 }

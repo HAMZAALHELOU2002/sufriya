@@ -13,17 +13,12 @@ return new class extends Migration
     {
         Schema::create('restaurant_users', function (Blueprint $table) {
             $table->id();
-          // تعريف الحقول أولاً كـ unsignedBigInteger لتضمن تطابقها مع id
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('restaurant_id');
-
             $table->enum('role', ['owner', 'manager', 'staff'])->default('staff');
             $table->timestamps();
-
-            // إضافة العلاقات صراحة
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('restaurant_id')->references('id')->on('restaurants')->onDelete('cascade');
-
             $table->unique(['user_id', 'restaurant_id']);
         });
     }

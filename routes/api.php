@@ -15,3 +15,7 @@ use App\Http\Controllers\OrderController;
 
 // تأكد من وجود هذا المسار تحديداً:
 Route::get('/orders/live', [OrderController::class, 'liveOrders']);
+Route::post('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+
+Route::post('/orders', [OrderController::class, 'storeApi']); // أو أي اسم دالة خصصناها للـ API
+Route::post('/orders', [OrderController::class, 'store']);
