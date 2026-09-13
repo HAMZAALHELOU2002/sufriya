@@ -39,5 +39,11 @@ return [
     'token'            => env('WHATSAPP_TOKEN'),
     'phone_account_id' => env('WHATSAPP_PHONE_ACCOUNT_ID'),
     ],
+    
+    'whatsapp' => [
+    'token' => env('WHATSAPP_TOKEN'),
+    'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+    'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'my_secret_token_123'),
+],
 
 ];

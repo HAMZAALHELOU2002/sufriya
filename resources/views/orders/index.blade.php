@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'لوحة تحكم مطعم حمزة')
+@section('title', 'لوحة تحكم مطعم ')
 
 @section('content')
     <div id="dashboard-wrapper" class="min-h-screen py-6 px-4 sm:px-6 lg:px-8 transition-colors duration-300 bg-gray-950 text-gray-100 flex flex-col justify-between" dir="rtl">
@@ -13,7 +13,7 @@
                         🍔
                     </div>
                     <div>
-                        <h1 class="text-2xl font-black tracking-wide" id="header-title">إدارة طلبات مطعم حمزة</h1>
+                        <h1 class="text-2xl font-black tracking-wide" id="header-title">إدارة طلبات مطعم </h1>
                         <p class="text-xs text-gray-400 mt-0.5" id="header-subtitle">تحديث تلقائي لحظي للطلبات</p>
                     </div>
                 </div>
@@ -32,52 +32,44 @@
                 </div>
             </div>
 
-            <!-- نموذج إضافة طلب جديد يدوياً -->
-            <div class="max-w-7xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-8 shadow-xl theme-card" id="form-container">
-                <h3 class="font-bold text-sm mb-3 flex items-center gap-2" id="form-title">
-                    <span>📝</span>
-                    <span>إضافة طلب جديد يدوياً</span>
-                </h3>
+            <!-- قسم الإحصائيات والتحليلات -->
+            @php
+                $totalOrdersCount = $orders->count();
+                $totalRevenue = $orders->where('status', 'completed')->sum('total_amount');
+                $uniqueCustomers = $orders->pluck('customer_id')->unique()->count();
+                $repeatCustomersCount = $orders->groupBy('customer_id')->filter(fn($group) => $group->count() > 1)->count();
+                $repeatCustomerPercentage = $uniqueCustomers > 0 ? round(($repeatCustomersCount / $uniqueCustomers) * 100) : 0;
+            @endphp
 
-                <form action="{{ route('orders.testStore') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
-                    @csrf
-
-                    <!-- اسم العميل -->
+            <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 mb-1">اسم العميل</label>
-                        <input type="text" name="customer_name" required placeholder="مثال: محمد أحمد"
-                            class="bg-gray-950 border border-gray-700 text-white text-xs rounded-xl px-3 py-2.5 w-full focus:outline-none focus:border-amber-500 theme-input">
+                        <p class="text-xs text-gray-400 font-medium">إجمالي الطلبات المكتملة</p>
+                        <h3 class="text-xl font-black text-white mt-1">{{ $orders->where('status', 'completed')->count() }}</h3>
                     </div>
-
-                    <!-- رقم الهاتف -->
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-lg">📦</div>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 mb-1">رقم الهاتف</label>
-                        <input type="text" name="customer_phone" required placeholder="0599000000" dir="ltr"
-                            class="bg-gray-950 border border-gray-700 text-white text-xs rounded-xl px-3 py-2.5 w-full focus:outline-none focus:border-amber-500 text-right theme-input">
+                        <p class="text-xs text-gray-400 font-medium">إجمالي الإيرادات</p>
+                        <h3 class="text-xl font-black text-emerald-400 mt-1">{{ number_format($totalRevenue, 2) }} ₪</h3>
                     </div>
-
-                    <!-- اسم الوجبة -->
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg">💰</div>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 mb-1">اسم الوجبة</label>
-                        <input type="text" name="item_name" required placeholder="مثال: وجبة برجر دجاج"
-                            class="bg-gray-950 border border-gray-700 text-white text-xs rounded-xl px-3 py-2.5 w-full focus:outline-none focus:border-amber-500 theme-input">
+                        <p class="text-xs text-gray-400 font-medium">إجمالي العملاء</p>
+                        <h3 class="text-xl font-black text-indigo-400 mt-1">{{ $uniqueCustomers }}</h3>
                     </div>
-
-                    <!-- السعر -->
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-lg">👥</div>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 mb-1">السعر (₪)</label>
-                        <input type="number" step="0.01" name="price" required placeholder="25"
-                            class="bg-gray-950 border border-gray-700 text-white text-xs rounded-xl px-3 py-2.5 w-full focus:outline-none focus:border-amber-500 theme-input">
+                        <p class="text-xs text-gray-400 font-medium">نسبة العملاء المتكررين</p>
+                        <h3 class="text-xl font-black text-amber-400 mt-1">{{ $repeatCustomerPercentage }}%</h3>
                     </div>
-
-                    <!-- زر الإرسال -->
-                    <div>
-                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-gray-950 font-black text-xs py-2.5 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-1.5 h-[38px]">
-                            <span>➕</span>
-                            <span>إضافة الطلب</span>
-                        </button>
-                    </div>
-                </form>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-lg">📈</div>
+                </div>
             </div>
 
             <!-- Stats Overview Cards -->
@@ -229,10 +221,7 @@
             const themeText = document.getElementById('theme-text');
             const themeIcon = document.getElementById('theme-icon');
             const themeToggleBtn = document.getElementById('theme-toggle-btn');
-            const formContainer = document.getElementById('form-container');
-            const formTitle = document.getElementById('form-title');
             const themeCards = document.querySelectorAll('.theme-card');
-            const themeInputs = document.querySelectorAll('.theme-input');
             const themeKanbanCols = document.querySelectorAll('.theme-kanban-col');
 
             if (wrapper.classList.contains('bg-gray-950')) {
@@ -256,23 +245,9 @@
                     themeToggleBtn.classList.add('bg-white', 'hover:bg-gray-100', 'text-gray-800', 'border-gray-300', 'shadow');
                 }
 
-                if(formContainer) {
-                    formContainer.classList.remove('bg-gray-900', 'border-gray-800');
-                    formContainer.classList.add('bg-white', 'border-gray-200', 'shadow-md');
-                }
-                if(formTitle) {
-                    formTitle.classList.remove('text-white');
-                    formTitle.classList.add('text-gray-900');
-                }
-
                 themeCards.forEach(card => {
                     card.classList.remove('bg-gray-900', 'border-gray-800');
                     card.classList.add('bg-white', 'border-gray-200', 'shadow-sm');
-                });
-
-                themeInputs.forEach(input => {
-                    input.classList.remove('bg-gray-950', 'border-gray-700', 'text-white');
-                    input.classList.add('bg-gray-50', 'border-gray-300', 'text-gray-900');
                 });
 
                 themeKanbanCols.forEach(col => {
@@ -304,23 +279,9 @@
                     themeToggleBtn.classList.add('bg-gray-800', 'hover:bg-gray-700', 'text-gray-200', 'border-gray-700');
                 }
 
-                if(formContainer) {
-                    formContainer.classList.remove('bg-white', 'border-gray-200', 'shadow-md');
-                    formContainer.classList.add('bg-gray-900', 'border-gray-800');
-                }
-                if(formTitle) {
-                    formTitle.classList.remove('text-gray-900');
-                    formTitle.classList.add('text-white');
-                }
-
                 themeCards.forEach(card => {
                     card.classList.remove('bg-white', 'border-gray-200', 'shadow-sm');
                     card.classList.add('bg-gray-900', 'border-gray-800');
-                });
-
-                themeInputs.forEach(input => {
-                    input.classList.remove('bg-gray-50', 'border-gray-300', 'text-gray-900');
-                    input.classList.add('bg-gray-950', 'border-gray-700', 'text-white');
                 });
 
                 themeKanbanCols.forEach(col => {

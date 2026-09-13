@@ -15,6 +15,7 @@ class Customer extends Model
         'last_ordered_at' => 'datetime',
     ];
 
+
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
@@ -24,4 +25,6 @@ class Customer extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+
 }

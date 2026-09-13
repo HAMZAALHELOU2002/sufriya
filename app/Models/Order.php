@@ -9,24 +9,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     use BelongsToRestaurant;
-    protected $fillable = [
-    'restaurant_id',
-    'customer_id',
-    'customer_name',
-    'customer_phone',
-    'fulfillment_type',
-    'status',
-    'payment_method',
-    'payment_status',
-    'total_amount',
-    'items',
-    'payment_reference'
-];
+   protected $fillable = [
+        'restaurant_id',
+        'customer_id',
+        'customer_name',
+        'customer_phone',
+        'fulfillment_type',
+        'status',
+        'payment_method',
+        'payment_status',
+        'total_amount',
+        'payment_reference',
+        'delivery_address',
+        'notified',
+        'outbound_msg_count'
+    ];
+
     protected $casts = [
         'total_amount' => 'decimal:3',
         'notified' => 'boolean',
         'outbound_msg_count' => 'integer',
-        'items' => 'array',
     ];
 
     public function restaurant(): BelongsTo
@@ -48,6 +50,4 @@ class Order extends Model
     {
         return $this->hasMany(OrderStatusHistory::class);
     }
-
-
 }
