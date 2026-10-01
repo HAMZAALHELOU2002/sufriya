@@ -1,305 +1,336 @@
-@extends('layouts.app')
-
-@section('title', 'لوحة تحكم مطعم ')
+@extends('layouts.admin')
 
 @section('content')
-    <div id="dashboard-wrapper" class="min-h-screen py-6 px-4 sm:px-6 lg:px-8 transition-colors duration-300 bg-gray-950 text-gray-100 flex flex-col justify-between" dir="rtl">
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-3 align-items-center">
+      <div class="col-sm-6">
+        <h1 class="m-0 font-weight-bold text-dark animate-fade-in">
+          <i class="fas fa-concierge-bell text-warning ml-2"></i> إدارة الطلبات الحية
+        </h1>
+      </div>
+      <div class="col-sm-6 text-left">
+        <a href="{{ route('invoices.index') }}" class="btn btn-primary btn-sm shadow-sm font-weight-bold pulse-btn">
+          <i class="fas fa-file-invoice-dollar ml-1"></i> عرض كافة الفواتير
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
-        <div>
-            <!-- Top Header Bar -->
-            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-8 p-6 rounded-2xl shadow-xl transition-colors duration-300 bg-gray-900 border border-gray-800" id="header-bar">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shadow-inner">
-                        🍔
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-black tracking-wide" id="header-title">إدارة طلبات مطعم </h1>
-                        <p class="text-xs text-gray-400 mt-0.5" id="header-subtitle">تحديث تلقائي لحظي للطلبات</p>
-                    </div>
-                </div>
+<section class="content">
+  <div class="container-fluid">
 
-                <div class="flex items-center flex-wrap gap-3">
-                    <!-- زر تبديل الثيم -->
-                    <button onclick="toggleTheme()" type="button" class="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 border border-gray-700" id="theme-toggle-btn">
-                        <span id="theme-icon">☀️</span>
-                        <span id="theme-text">الوضع الفاتح</span>
-                    </button>
-
-                    <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl" id="status-badge-wrapper">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                        <span class="text-xs font-bold text-emerald-400">النظام متصل</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- قسم الإحصائيات والتحليلات -->
-            @php
-                $totalOrdersCount = $orders->count();
-                $totalRevenue = $orders->where('status', 'completed')->sum('total_amount');
-                $uniqueCustomers = $orders->pluck('customer_id')->unique()->count();
-                $repeatCustomersCount = $orders->groupBy('customer_id')->filter(fn($group) => $group->count() > 1)->count();
-                $repeatCustomerPercentage = $uniqueCustomers > 0 ? round(($repeatCustomersCount / $uniqueCustomers) * 100) : 0;
-            @endphp
-
-            <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
-                    <div>
-                        <p class="text-xs text-gray-400 font-medium">إجمالي الطلبات المكتملة</p>
-                        <h3 class="text-xl font-black text-white mt-1">{{ $orders->where('status', 'completed')->count() }}</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-lg">📦</div>
-                </div>
-                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
-                    <div>
-                        <p class="text-xs text-gray-400 font-medium">إجمالي الإيرادات</p>
-                        <h3 class="text-xl font-black text-emerald-400 mt-1">{{ number_format($totalRevenue, 2) }} ₪</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg">💰</div>
-                </div>
-                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
-                    <div>
-                        <p class="text-xs text-gray-400 font-medium">إجمالي العملاء</p>
-                        <h3 class="text-xl font-black text-indigo-400 mt-1">{{ $uniqueCustomers }}</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-lg">👥</div>
-                </div>
-                <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex items-center justify-between theme-card">
-                    <div>
-                        <p class="text-xs text-gray-400 font-medium">نسبة العملاء المتكررين</p>
-                        <h3 class="text-xl font-black text-amber-400 mt-1">{{ $repeatCustomerPercentage }}%</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-lg">📈</div>
-                </div>
-            </div>
-
-            <!-- Stats Overview Cards -->
-            @php
-                $totalOrders = $orders->count();
-                $pendingOrders = $orders->where('status', 'pending_acceptance')->count();
-                $acceptedOrders = $orders->where('status', 'accepted')->count();
-                $preparingOrders = $orders->where('status', 'preparing')->count();
-                $readyOrders = $orders->where('status', 'ready')->count();
-                $completedOrders = $orders->where('status', 'completed')->count();
-            @endphp
-
-            <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div class="stat-card p-4 rounded-xl flex flex-col justify-between transition-colors duration-300 bg-gray-900 border border-gray-800 shadow-sm theme-card">
-                    <span class="text-xs font-medium text-gray-400">إجمالي الطلبات</span>
-                    <span class="text-2xl font-black mt-1 stat-value">{{ $totalOrders }}</span>
-                </div>
-                <div class="stat-card p-4 rounded-xl flex flex-col justify-between transition-colors duration-300 bg-gray-900 border border-gray-800 shadow-sm theme-card">
-                    <span class="text-xs font-medium text-rose-400">قيد الانتظار</span>
-                    <span class="text-2xl font-black mt-1 stat-value text-rose-500">{{ $pendingOrders }}</span>
-                </div>
-                <div class="stat-card p-4 rounded-xl flex flex-col justify-between transition-colors duration-300 bg-gray-900 border border-gray-800 shadow-sm theme-card">
-                    <span class="text-xs font-medium text-blue-400">تم القبول</span>
-                    <span class="text-2xl font-black mt-1 stat-value text-blue-500">{{ $acceptedOrders }}</span>
-                </div>
-                <div class="stat-card p-4 rounded-xl flex flex-col justify-between transition-colors duration-300 bg-gray-900 border border-gray-800 shadow-sm theme-card">
-                    <span class="text-xs font-medium text-amber-400">قيد التجهيز</span>
-                    <span class="text-2xl font-black mt-1 stat-value text-amber-500">{{ $preparingOrders }}</span>
-                </div>
-                <div class="stat-card p-4 rounded-xl flex flex-col justify-between transition-colors duration-300 bg-gray-900 border border-gray-800 shadow-sm theme-card">
-                    <span class="text-xs font-medium text-indigo-400">جاهز للاستلام</span>
-                    <span class="text-2xl font-black mt-1 stat-value text-indigo-400">{{ $readyOrders }}</span>
-                </div>
-                <div class="stat-card p-4 rounded-xl flex flex-col justify-between transition-colors duration-300 bg-gray-900 border border-gray-800 shadow-sm theme-card">
-                    <span class="text-xs font-medium text-emerald-400">مكتمل</span>
-                    <span class="text-2xl font-black mt-1 stat-value text-emerald-500">{{ $completedOrders }}</span>
-                </div>
-            </div>
-
-            <!-- Kanban Board Columns -->
-            <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-
-                <!-- 1. قيد الانتظار -->
-                <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 flex flex-col h-[600px] theme-kanban-col">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h2 class="font-bold text-sm text-rose-400 flex items-center gap-2">
-                            <span>⏳</span> قيد الانتظار
-                        </h2>
-                        <span class="bg-rose-500/20 text-rose-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                            {{ $orders->where('status', 'pending_acceptance')->count() }}
-                        </span>
-                    </div>
-                    <div class="overflow-y-auto space-y-3 pr-1 flex-1">
-                        @forelse($orders->where('status', 'pending_acceptance') as $order)
-                            @include('orders.partials.card', ['order' => $order])
-                        @empty
-                            <p class="text-xs text-gray-500 text-center py-8">لا توجد طلبات</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- 2. تم القبول -->
-                <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 flex flex-col h-[600px] theme-kanban-col">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h2 class="font-bold text-sm text-blue-400 flex items-center gap-2">
-                            <span>✅</span> تم القبول
-                        </h2>
-                        <span class="bg-blue-500/20 text-blue-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                            {{ $orders->where('status', 'accepted')->count() }}
-                        </span>
-                    </div>
-                    <div class="overflow-y-auto space-y-3 pr-1 flex-1">
-                        @forelse($orders->where('status', 'accepted') as $order)
-                            @include('orders.partials.card', ['order' => $order])
-                        @empty
-                            <p class="text-xs text-gray-500 text-center py-8">لا توجد طلبات</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- 3. قيد التجهيز -->
-                <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 flex flex-col h-[600px] theme-kanban-col">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h2 class="font-bold text-sm text-amber-400 flex items-center gap-2">
-                            <span>🔥</span> قيد التجهيز
-                        </h2>
-                        <span class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                            {{ $orders->where('status', 'preparing')->count() }}
-                        </span>
-                    </div>
-                    <div class="overflow-y-auto space-y-3 pr-1 flex-1">
-                        @forelse($orders->where('status', 'preparing') as $order)
-                            @include('orders.partials.card', ['order' => $order])
-                        @empty
-                            <p class="text-xs text-gray-500 text-center py-8">لا توجد طلبات</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- 4. جاهز للاستلام -->
-                <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 flex flex-col h-[600px] theme-kanban-col">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h2 class="font-bold text-sm text-indigo-400 flex items-center gap-2">
-                            <span>🛍️</span> جاهز للاستلام
-                        </h2>
-                        <span class="bg-indigo-500/20 text-indigo-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                            {{ $orders->where('status', 'ready')->count() }}
-                        </span>
-                    </div>
-                    <div class="overflow-y-auto space-y-3 pr-1 flex-1">
-                        @forelse($orders->where('status', 'ready') as $order)
-                            @include('orders.partials.card', ['order' => $order])
-                        @empty
-                            <p class="text-xs text-gray-500 text-center py-8">لا توجد طلبات</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- 5. مكتمل -->
-                <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 flex flex-col h-[600px] theme-kanban-col">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h2 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
-                            <span>🎉</span> مكتمل
-                        </h2>
-                        <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                            {{ $orders->where('status', 'completed')->count() }}
-                        </span>
-                    </div>
-                    <div class="overflow-y-auto space-y-3 pr-1 flex-1">
-                        @forelse($orders->where('status', 'completed') as $order)
-                            @include('orders.partials.card', ['order' => $order])
-                        @empty
-                            <p class="text-xs text-gray-500 text-center py-8">لا توجد طلبات</p>
-                        @endforelse
-                    </div>
-                </div>
-
-            </div>
+    <!-- البطاقات الإحصائية العلوية الديناميكية -->
+    <div class="row">
+      <!-- إجمالي الطلبات -->
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-gradient-info shadow-sm rounded-lg overflow-hidden position-relative stat-card">
+          <div class="inner p-3">
+            <h3 class="font-weight-bold counter-num">{{ $analytics['total_orders'] ?? 0 }}</h3>
+            <p class="mb-0 font-weight-semibold">إجمالي الطلبات</p>
+          </div>
+          <div class="icon floating-icon">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <div class="small-box-footer bg-dark text-white py-1 text-center small">
+            حالة الطلبات النشطة
+          </div>
         </div>
+      </div>
+
+      <!-- إجمالي المبيعات والأموال -->
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-gradient-success shadow-sm rounded-lg overflow-hidden position-relative stat-card money-card">
+          <div class="inner p-3">
+            <h3 class="font-weight-bold counter-num">${{ number_format($analytics['total_revenue'] ?? 0, 2) }}</h3>
+            <p class="mb-0 font-weight-semibold">إجمالي المبيعات والأموال</p>
+          </div>
+          <div class="icon floating-icon">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+          <div class="small-box-footer bg-dark text-white py-1 text-center small">
+            الإيرادات المسجلة
+          </div>
+        </div>
+      </div>
+
+      <!-- إجمالي العملاء -->
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-gradient-warning shadow-sm rounded-lg overflow-hidden position-relative stat-card">
+          <div class="inner p-3 text-dark">
+            <h3 class="font-weight-bold counter-num">{{ $analytics['total_customers'] ?? 0 }}</h3>
+            <p class="mb-0 font-weight-semibold">إجمالي العملاء</p>
+          </div>
+          <div class="icon floating-icon text-dark" style="opacity: 0.15;">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="small-box-footer bg-dark text-white py-1 text-center small">
+            العملاء الحاليين
+          </div>
+        </div>
+      </div>
+
+      <!-- نسبة العملاء المتكررين -->
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-gradient-danger shadow-sm rounded-lg overflow-hidden position-relative stat-card">
+          <div class="inner p-3">
+            <h3 class="font-weight-bold counter-num">{{ $analytics['repeat_customer_percentage'] ?? 0 }}%</h3>
+            <p class="mb-0 font-weight-semibold">نسبة العملاء المتكررين</p>
+          </div>
+          <div class="icon floating-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="small-box-footer bg-dark text-white py-1 text-center small">
+            مؤشر الولاء
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- كود JavaScript الخاص بالوضع الداكن والفاتح -->
-    <script>
-        function toggleTheme() {
-            const wrapper = document.getElementById('dashboard-wrapper');
-            const headerBar = document.getElementById('header-bar');
-            const headerTitle = document.getElementById('header-title');
-            const headerSubtitle = document.getElementById('header-subtitle');
-            const themeText = document.getElementById('theme-text');
-            const themeIcon = document.getElementById('theme-icon');
-            const themeToggleBtn = document.getElementById('theme-toggle-btn');
-            const themeCards = document.querySelectorAll('.theme-card');
-            const themeKanbanCols = document.querySelectorAll('.theme-kanban-col');
+    <!-- جدول قائمة الطلبات الواردة الديناميكي -->
+    <div class="card card-outline card-primary shadow-sm border-0 rounded-lg mt-3">
+      <div class="card-header bg-white py-3">
+        <h3 class="card-title font-weight-bold text-dark m-0">
+          <i class="fas fa-list-alt text-primary ml-1"></i> قائمة الطلبات الواردة
+        </h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle text-right mb-0">
+            <thead class="thead-light text-secondary font-weight-bold">
+              <tr>
+                <th class="py-3 text-center" style="width: 80px;">رقم الطلب</th>
+                <th class="py-3">العميل</th>
+                <th class="py-3">رقم الهاتف</th>
+                <th class="py-3">تفاصيل الطبق / الدفع</th>
+                <th class="py-3">المبلغ الإجمالي</th>
+                <th class="py-3 text-center">الحالة</th>
+                <th class="py-3 text-center">تاريخ الطلب</th>
+                <th class="py-3 text-center" style="width: 250px;">إجراءات وتحديث الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              @forelse($orders as $order)
+              <tr class="table-row-hover">
+                <td class="text-center font-weight-bold text-primary align-middle">{{ $order->id }}</td>
+                <td class="align-middle font-weight-bold text-dark">
+                  <i class="fas fa-user-circle text-muted ml-1"></i> {{ $order->customer->name ?? 'عميل غير مسجل' }}
+                </td>
+                <td class="align-middle text-muted" dir="ltr" style="text-align: right;">{{ $order->customer->wa_phone_number ?? '-' }}</td>
+                <td class="align-middle">
+                  <span class="badge badge-light border px-2 py-1 text-secondary">{{ $order->payment_reference ?? 'وجبة مأکولات' }}</span>
+                </td>
+                <td class="align-middle font-weight-bold text-success">${{ number_format($order->total_price, 2) }}</td>
+                <td class="text-center align-middle">
+                  @php
+                      $statusClass = match($order->status) {
+                          'pending_acceptance' => 'badge-warning',
+                          'accepted' => 'badge-info',
+                          'preparing' => 'badge-primary',
+                          'ready' => 'badge-secondary',
+                          'completed' => 'badge-success',
+                          'cancelled', 'expired' => 'badge-danger',
+                          default => 'badge-light'
+                      };
+                      $statusText = match($order->status) {
+                          'pending_acceptance' => 'قيد الانتظار',
+                          'accepted' => 'تم القبول',
+                          'preparing' => 'قيد التحضير',
+                          'ready' => 'جاهز',
+                          'completed' => 'مكتمل',
+                          'cancelled' => 'ملغي',
+                          'expired' => 'منتهي الصلاحية',
+                          default => $order->status
+                      };
+                  @endphp
+                  <span class="badge {{ $statusClass }} px-3 py-2 font-weight-bold shadow-sm status-badge">{{ $statusText }}</span>
+                </td>
+                <td class="text-center align-middle text-muted small" dir="ltr">
+                  <i class="far fa-clock ml-1"></i> {{ $order->created_at->format('Y-m-d H:i') }}
+                </td>
+                <td class="text-center align-middle">
+                  <div class="d-flex align-items-center justify-content-center flex-nowrap" style="gap: 4px;">
+                    <!-- فورم تحديث الحالة -->
+                    <form action="{{ route('orders.update', $order->id) }}" method="POST" class="d-inline-flex align-items-center mb-0">
+                      @csrf
+                      <select name="status" class="form-control form-control-sm font-weight-bold text-dark ml-1" style="width: 105px;" onchange="this.form.submit()">
+                        <option value="pending_acceptance" {{ $order->status == 'pending_acceptance' ? 'selected' : '' }}>قيد الانتظار</option>
+                        <option value="accepted" {{ $order->status == 'accepted' ? 'selected' : '' }}>تم القبول</option>
+                        <option value="preparing" {{ $order->status == 'preparing' ? 'selected' : '' }}>قيد التحضير</option>
+                        <option value="ready" {{ $order->status == 'ready' ? 'selected' : '' }}>جاهز</option>
+                        <option value="completed" {{ $order->status == 'completed' ? 'selected' : '' }}>مكتمل</option>
+                        <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>ملغي</option>
+                      </select>
 
-            if (wrapper.classList.contains('bg-gray-950')) {
-                // التحويل للوضع الفاتح
-                wrapper.classList.remove('bg-gray-950', 'text-gray-100');
-                wrapper.classList.add('bg-gray-100', 'text-gray-900');
+                      <button type="submit" class="btn btn-success btn-sm px-2 shadow-sm action-btn" title="حفظ الحالة">
+                        <i class="fas fa-check"></i>
+                      </button>
+                    </form>
 
-                if(headerBar) {
-                    headerBar.classList.remove('bg-gray-900', 'border-gray-800');
-                    headerBar.classList.add('bg-white', 'border-gray-200', 'shadow-md');
-                }
-                if(headerTitle) headerTitle.classList.remove('text-white');
-                if(headerTitle) headerTitle.classList.add('text-gray-900');
-                if(headerSubtitle) {
-                    headerSubtitle.classList.remove('text-gray-400');
-                    headerSubtitle.classList.add('text-gray-500');
-                }
+                    <!-- زر الفاتورة -->
+                    <a href="{{ route('orders.invoice', $order->id) }}" target="_blank" class="btn btn-info btn-sm px-2 shadow-sm text-white action-btn" title="عرض الفاتورة">
+                      <i class="fas fa-file-invoice"></i>
+                    </a>
 
-                if(themeToggleBtn) {
-                    themeToggleBtn.classList.remove('bg-gray-800', 'hover:bg-gray-700', 'text-gray-200', 'border-gray-700');
-                    themeToggleBtn.classList.add('bg-white', 'hover:bg-gray-100', 'text-gray-800', 'border-gray-300', 'shadow');
-                }
+                    <!-- فورم الحذف -->
+                    <form action="{{ route('orders.destroy', $order->id) }}" method="POST" class="d-inline mb-0" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطلب؟');">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="btn btn-danger btn-sm px-2 shadow-sm action-btn" title="حذف الطلب">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              @empty
+              <tr>
+                <td colspan="8" class="text-center py-4 text-muted">
+                  <i class="fas fa-box-open fa-2x mb-2"></i>
+                  <p class="mb-0">لا توجد طلبات واردة حالياً.</p>
+                </td>
+              </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-                themeCards.forEach(card => {
-                    card.classList.remove('bg-gray-900', 'border-gray-800');
-                    card.classList.add('bg-white', 'border-gray-200', 'shadow-sm');
-                });
-
-                themeKanbanCols.forEach(col => {
-                    col.classList.remove('bg-gray-900/60', 'border-gray-800');
-                    col.classList.add('bg-white', 'border-gray-200', 'shadow-sm');
-                });
-
-                themeText.innerText = 'الوضع الداكن';
-                themeIcon.innerText = '🌙';
-                localStorage.setItem('theme', 'light');
-            } else {
-                // التحويل للوضع الداكن
-                wrapper.classList.remove('bg-gray-100', 'text-gray-900');
-                wrapper.classList.add('bg-gray-950', 'text-gray-100');
-
-                if(headerBar) {
-                    headerBar.classList.remove('bg-white', 'border-gray-200', 'shadow-md');
-                    headerBar.classList.add('bg-gray-900', 'border-gray-800');
-                }
-                if(headerTitle) headerTitle.classList.remove('text-gray-900');
-                if(headerTitle) headerTitle.classList.add('text-white');
-                if(headerSubtitle) {
-                    headerSubtitle.classList.remove('text-gray-500');
-                    headerSubtitle.classList.add('text-gray-400');
-                }
-
-                if(themeToggleBtn) {
-                    themeToggleBtn.classList.remove('bg-white', 'hover:bg-gray-100', 'text-gray-800', 'border-gray-300', 'shadow');
-                    themeToggleBtn.classList.add('bg-gray-800', 'hover:bg-gray-700', 'text-gray-200', 'border-gray-700');
-                }
-
-                themeCards.forEach(card => {
-                    card.classList.remove('bg-white', 'border-gray-200', 'shadow-sm');
-                    card.classList.add('bg-gray-900', 'border-gray-800');
-                });
-
-                themeKanbanCols.forEach(col => {
-                    col.classList.remove('bg-white', 'border-gray-200', 'shadow-sm');
-                    col.classList.add('bg-gray-900/60', 'border-gray-800');
-                });
-
-                themeText.innerText = 'الوضع الفاتح';
-                themeIcon.innerText = '☀️';
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // استرجاع الثيم المحفوظ عند فتح الصفحة
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('theme') === 'light') {
-                toggleTheme();
-            }
-        });
-    </script>
+  </div>
+</section>
 @endsection
+
+
+@push('styles')
+<style>
+  .table td, .table th {
+    vertical-align: middle !important;
+  }
+  .stat-card {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    cursor: pointer;
+  }
+  .stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important;
+  }
+  .money-card:hover {
+    filter: brightness(1.05);
+  }
+  .floating-icon {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    font-size: 45px;
+    opacity: 0.2;
+    transition: transform 0.4s ease;
+  }
+  .stat-card:hover .floating-icon {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 0.35;
+  }
+  .table-row-hover {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+  .table-row-hover:hover {
+    background-color: rgba(0, 123, 255, 0.03) !important;
+  }
+  .action-btn {
+    transition: transform 0.2s ease;
+  }
+  .action-btn:hover {
+    transform: scale(1.15);
+  }
+</style>
+@endpush
+@push('scripts')
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    window.Pusher = Pusher;
+
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: "{{ config('broadcasting.connections.pusher.key') }}",
+        cluster: "{{ config('broadcasting.connections.pusher.options.cluster') }}",
+        forceTLS: true
+    });
+
+    const restaurantId = "{{ $restaurantId ?? '' }}";
+
+    // تجهيز صوت التنبيه (رنين جرس مخصص من مصدر موثوق وسريع)
+    const orderSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    if (restaurantId) {
+        window.Echo.channel('restaurant.' + restaurantId)
+            .listen('.new.order', (e) => {
+                console.log('طلب جديد وصل:', e.order);
+
+                // 1. تشغيل صوت التنبيه فوراً
+                orderSound.play().catch(error => {
+                    console.log("متصفح الويب منع التشغيل التلقائي حتى يتم تفاعل المستخدم مع الصفحة:", error);
+                });
+
+                // 2. إظهار الـ Toast العصري
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: '🔔 وصل طلب جديد #' + e.order.id,
+                    text: 'المبلغ: ' + e.order.total_price + ' ر.س',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+
+                // 3. تحديث عداد الإشعارات (الجرس) فوراً برمجياً
+                const badge = document.getElementById('notification-badge');
+                if (badge) {
+                    let currentCount = parseInt(badge.textContent) || 0;
+                    currentCount += 1;
+                    badge.textContent = currentCount;
+                    badge.style.display = 'inline-block';
+                }
+
+                // 4. تحديث قائمة الإشعارات المنسدلة فوراً
+                const headerCount = document.getElementById('notification-header-count');
+                if (headerCount) {
+                    let currentCount = parseInt(headerCount.textContent) || 0;
+                    headerCount.textContent = (currentCount + 1) + ' إشعارات جديدة';
+                }
+
+                const noNotifMsg = document.getElementById('no-notifications-msg');
+                if (noNotifMsg) {
+                    noNotifMsg.remove();
+                }
+
+                const listContainer = document.getElementById('notifications-list-container');
+                if (listContainer) {
+                    const newNotificationItem = document.createElement('div');
+                    newNotificationItem.innerHTML = `
+                        <a href="/orders" class="dropdown-item py-2 bg-light">
+                            <div class="media align-items-center">
+                                <i class="fas fa-shopping-cart text-primary fa-lg ml-3"></i>
+                                <div class="media-body">
+                                    <p class="text-sm font-weight-bold text-dark mb-0">طلب جديد وارد رقم #${e.order.id}</p>
+                                    <p class="text-muted text-xs mb-0"><i class="far fa-clock ml-1"></i>الآن</p>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                    `;
+                    listContainer.prepend(newNotificationItem);
+                }
+
+                // 5. تحديث الجدول بعد ثانيتين ليرى الطلب الجديد مضافاً
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            });
+    }
+</script>
+@endpush

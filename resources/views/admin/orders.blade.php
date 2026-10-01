@@ -41,7 +41,7 @@
                                     <td>{{ $order->restaurant_id ?? '-' }}</td>
                                     <td class="fw-bold">{{ $order->customer_id ?? '-' }}</td>
                                     <td>{{ $order->fulfillment_type ?? '-' }}</td>
-                                    <td>{{ $order->total_amount ?? 0 }} شيكل</td>
+                                    <td>{{ $order->total_price ?? 0 }} شيكل</td>
                                     <td>
                                         <span class="badge bg-warning text-dark">{{ $order->status }}</span>
                                     </td>

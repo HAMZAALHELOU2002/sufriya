@@ -12,9 +12,23 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append(IdentifyRestaurant::class);
-    })
+  ->withMiddleware(function (Middleware $middleware) {
+
+    // تسجيل الـ Aliases هنا بشكل صحيح
+    $middleware->alias([
+        'restaurant.role' => \App\Http\Middleware\CheckRestaurantRole::class,
+        'restaurant.api' => \App\Http\Middleware\VerifyRestaurantApiToken::class,
+        'subscribed' => \App\Http\Middleware\CheckSubscription::class,
+
+    ]);
+
+    // استثناءات الـ CSRF تبقى وحدها هنا
+    $middleware->validateCsrfTokens(except: [
+        'orders',
+        'orders/*',
+    ]);
+
+})
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

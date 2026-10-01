@@ -1,60 +1,80 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تعديل الوجبة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
+@extends('layouts.admin')
 
-    <div class="container mx-auto p-6 max-w-xl">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h1 class="text-xl font-bold text-gray-800">✏️ تعديل الوجبة: {{ $menuItem->name }}</h1>
-                <a href="{{ route('menu-items.index') }}" class="text-gray-500 hover:text-gray-700 text-sm">← رجوع للقائمة</a>
+@section('content')
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 font-weight-bold text-dark">
+          <i class="fas fa-edit text-info ml-2"></i> تعديل بيانات الطبق: {{ $menuItem->name }}
+        </h1>
+      </div>
+      <div class="col-sm-6 text-left">
+        <a href="{{ route('menu-items.index') }}" class="btn btn-secondary btn-sm shadow-sm font-weight-bold">
+          <i class="fas fa-arrow-right ml-1"></i> رجوع للأطباق
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-8 mx-auto">
+
+        <div class="card card-outline card-info shadow-sm border-0 rounded-lg">
+          <form action="{{ route('menu-items.update', $menuItem->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <div class="card-body p-4">
+              <div class="form-group">
+                <label class="font-weight-bold text-dark">القسم <span class="text-danger">*</span></label>
+                <select name="category_id" class="form-control form-control-lg rounded-pill shadow-sm" required>
+                  @foreach($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ $menuItem->category_id == $cat->id ? 'selected' : '' }}>
+                      {{ $cat->name }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="font-weight-bold text-dark">اسم الطبق <span class="text-danger">*</span></label>
+                <input type="text" name="name" value="{{ $menuItem->name }}" class="form-control form-control-lg rounded-pill shadow-sm" required>
+              </div>
+
+              <div class="form-group">
+                <label class="font-weight-bold text-dark">السعر (د.أ) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="price" value="{{ $menuItem->price }}" class="form-control rounded-pill shadow-sm" required>
+              </div>
+
+              <div class="form-group">
+                <label class="font-weight-bold text-dark">وصف الطبق</label>
+                <textarea name="description" class="form-control rounded-lg shadow-sm" rows="3">{{ $menuItem->description }}</textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="font-weight-bold text-dark">تغيير الصورة (اختياري)</label>
+                <input type="file" name="image" class="form-control-file">
+              </div>
+
+              <div class="form-group form-check mt-3">
+                <input type="checkbox" name="is_available" class="form-check-input" id="is_available" {{ $menuItem->is_available ? 'checked' : '' }}>
+                <label class="form-check-label font-weight-bold text-dark" for="is_available">الطبق متاح للطلب</label>
+              </div>
             </div>
 
-            <!-- عرض الأخطاء إن وجدت -->
-            @if ($errors->any())
-                <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">
-                    <ul class="list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form action="{{ route('menu-items.update', $menuItem->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">اسم الوجبة</label>
-                    <input type="text" name="name" value="{{ old('name', $menuItem->name) }}" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">السعر (₪)</label>
-                    <input type="number" step="0.01" name="price" value="{{ old('price', $menuItem->price) }}" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm">
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">الوصف (اختياري)</label>
-                    <textarea name="description" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm">{{ old('description', $menuItem->description) }}</textarea>
-                </div>
-
-                <div class="flex justify-end space-x-2 space-x-reverse">
-                    <a href="{{ route('menu-items.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">إلغاء</a>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow">تحديث الوجبة</button>
-                </div>
-            </form>
+            <div class="card-footer bg-light px-4 py-3 text-left">
+              <a href="{{ route('menu-items.index') }}" class="btn btn-secondary rounded-pill px-4 ml-2">إلغاء</a>
+              <button type="submit" class="btn btn-info rounded-pill px-4 shadow-sm text-white font-weight-bold">تحديث التغييرات</button>
+            </div>
+          </form>
         </div>
-    </div>
 
-</body>
-</html>
+      </div>
+    </div>
+  </div>
+</section>
+@endsection

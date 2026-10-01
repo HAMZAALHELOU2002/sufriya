@@ -7,33 +7,41 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
-    protected string $token;
-    protected string $phoneAccountId;
-
-    public function __construct()
+    public static function sendOrderNotification($restaurant, $order)
     {
-        $this->token = config('services.whatsapp.token', 'YOUR_META_TOKEN');
-        $this->phoneAccountId = config('services.whatsapp.phone_account_id', 'YOUR_PHONE_ACCOUNT_ID');
-    }
-
-    public function sendMessage(string $toPhoneNumber, string $messageText): bool
-    {
-        $url = "https://graph.facebook.com/v19.0/{$this->phoneAccountId}/messages";
-
-        $response = Http::withToken($this->token)->post($url, [
-            'messaging_product' => 'whatsapp',
-            'to' => $toPhoneNumber,
-            'type' => 'text',
-            'text' => [
-                'body' => $messageText
-            ]
-        ]);
-
-        if ($response->failed()) {
-            Log::error('WhatsApp API Error:', $response->json());
+        // التحقق من توفر بيانات واتساب للمطعم
+        if (empty($restaurant->whatsapp_token) || empty($restaurant->whatsapp_phone_id)) {
             return false;
         }
 
-        return true;
+        $url = "https://graph.facebook.com/v17.0/{$restaurant->whatsapp_phone_id}/messages";
+
+        $message = "🔔 *طلب جديد عبر منصة سفريا*\n\n" .
+                   "رقم الطلب: #{$order->id}\n" .
+                   "اسم العميل: {$order->customer_name}\n" .
+                   "المبلغ الإجمالي: {$order->total_amount} ر.س\n\n" .
+                   "يرجى تسجيل الدخول للوحة التحكم لمتابعة الطلب.";
+
+        try {
+            $response = Http::withToken($restaurant->whatsapp_token)
+                ->post($url, [
+                    'messaging_product' => 'whatsapp',
+                    'to' => $restaurant->whatsapp_number, // رقم هاتف المطعم لاستقبال التنبيهات
+                    'type' => 'text',
+                    'text' => [
+                        'body' => $message
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                return true;
+            } else {
+                Log::error('WhatsApp API Error: ' . $response->body());
+                return false;
+            }
+        } catch (\Exception $e) {
+            Log::error('WhatsApp Exception: ' . $e->getMessage());
+            return false;
+        }
     }
 }

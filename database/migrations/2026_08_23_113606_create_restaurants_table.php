@@ -15,10 +15,17 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('chain_id')->nullable()->index();
             $table->string('name');
+            $table->string('phone')->nullable(); // تم إزالة after('name') لأنها غير مدعومة عند الإنشاء
             $table->string('logo_path')->nullable();
             $table->string('location')->nullable();
             $table->json('business_hours')->nullable();
-            $table->enum('status', ['trial', 'active', 'past_due', 'suspended'])->default('trial');
+
+            // الحديقة الصحيحة للحالة تشمل active و closed
+            $table->enum('status', ['trial', 'active', 'closed', 'past_due', 'suspended'])->default('trial');
+
+            // إضافة حقل رسالة الإغلاق
+            $table->string('close_message')->nullable();
+
             $table->string('whatsapp_phone_number_id')->nullable()->unique();
             $table->string('whatsapp_business_account_id')->nullable();
             $table->enum('whatsapp_verification_status', ['pending', 'verified', 'rejected'])->default('pending');

@@ -23,7 +23,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-
     ];
 
     /**
@@ -35,20 +34,14 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'settings' => 'array',
-    ];
 
     /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
-     */
+     *//*  */
     protected function casts(): array
     {
-
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',

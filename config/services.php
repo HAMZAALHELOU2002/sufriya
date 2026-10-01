@@ -39,11 +39,17 @@ return [
     'token'            => env('WHATSAPP_TOKEN'),
     'phone_account_id' => env('WHATSAPP_PHONE_ACCOUNT_ID'),
     ],
-    
+
     'whatsapp' => [
     'token' => env('WHATSAPP_TOKEN'),
     'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
     'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'my_secret_token_123'),
+],
+
+'google' => [
+    'client_id' => env('GOOGLE_CLIENT_ID'),
+    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    'redirect' => env('GOOGLE_REDIRECT_URI'),
 ],
 
 ];

@@ -25,7 +25,7 @@ class WhatsAppWebhookController extends Controller
             return response()->json(['status' => 'ignored', 'message' => 'Phone number not found'], 200);
         }
 
-        $restaurant = $this->getDefaultRestaurant();
+        $restaurant = $this->getDefaultRestaurant($request);
         $customer = $this->getOrCreateCustomer($phoneNumber, $restaurant->id);
         $session = $this->getOrCreateSession($customer->id);
 
@@ -72,8 +72,17 @@ class WhatsAppWebhookController extends Controller
         return trim($request->input('message') ?? $request->input('body') ?? '');
     }
 
-    private function getDefaultRestaurant()
+    private function getDefaultRestaurant(Request $request)
     {
+        $whatsappPhoneNumberId = $request->input('entry.0.changes.0.value.metadata.phone_number_id');
+
+        if ($whatsappPhoneNumberId) {
+            $restaurant = Restaurant::where('whatsapp_phone_number_id', $whatsappPhoneNumberId)->first();
+            if ($restaurant) {
+                return $restaurant;
+            }
+        }
+
         return Restaurant::firstOrCreate(
             ['id' => 1],
             ['name' => 'مطعم حمزة الرئيسي']
@@ -119,11 +128,15 @@ class WhatsAppWebhookController extends Controller
         $deliveryAddress = $userMessage;
         $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cart));
 
+        // تم ضبط الحقل ليوافق total_price الموجود في جدول orders لديك
         $order = Order::create([
             'restaurant_id' => $restaurant->id,
             'customer_id' => $customer->id,
-            'total_amount' => $total,
+            'total_price' => $total,
             'status' => 'pending_acceptance',
+            'payment_method' => 'cash',
+            'payment_status' => 'pending_cash',
+            'fulfillment_type' => 'delivery',
             'payment_reference' => 'دفع عند الاستلام',
             'delivery_address' => $deliveryAddress
         ]);
@@ -273,5 +286,25 @@ class WhatsAppWebhookController extends Controller
         $session->update(['session_data' => $sessionData]);
 
         return "✅ تمت إضافة *{$menuItem->name}* إلى سلتك.\nأرسل *سلة* لعرض المحتويات أو *تأكيد* لإنهاء الطلب.";
+    }
+
+    public function verify(Request $request)
+    {
+        $verifyToken = "YOUR_VERIFY_TOKEN";
+
+        $mode = $request->query('hub_mode');
+        $token = $request->query('hub_verify_token');
+        $challenge = $request->query('hub_challenge');
+
+        if ($mode && $token) {
+            if ($mode === 'subscribe' && $token === $verifyToken) {
+                Log::info('WhatsApp Webhook Verified Successfully.');
+                return response($challenge, 200);
+            } else {
+                return response()->json(['error' => 'Verification token mismatch'], 403);
+            }
+        }
+
+        return response()->json(['error' => 'Invalid verification request'], 400);
     }
 }

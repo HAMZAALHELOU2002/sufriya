@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
             'sort_order' => 1,
             'is_active' => true,
         ]);
-     
+
 
         // 5. إنشاء وجبة في المنيو
         $item = MenuItem::create([
@@ -82,7 +82,7 @@ class DatabaseSeeder extends Seeder
     'status'           => 'pending_acceptance', // القيمة الصحيحة
     'payment_method'   => 'cash',               // تم التعديل من cod إلى cash
     'payment_status'   => 'pending_cash',        // القيمة الصحيحة
-    'total_amount'     => 10.0,
+    'total_price'     => 10.0,
 ]);
 
         // 8. إضافة تفاصيل الطلب

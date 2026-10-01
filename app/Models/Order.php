@@ -18,7 +18,7 @@ class Order extends Model
         'status',
         'payment_method',
         'payment_status',
-        'total_amount',
+        'total_price',
         'payment_reference',
         'delivery_address',
         'notified',
@@ -26,7 +26,7 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'total_amount' => 'decimal:3',
+        'total_price' => 'decimal:3',
         'notified' => 'boolean',
         'outbound_msg_count' => 'integer',
     ];

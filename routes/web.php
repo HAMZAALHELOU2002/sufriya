@@ -1,57 +1,100 @@
 <?php
 
-use App\Http\Controllers\Admin\OrderDashboardController;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Api\MenuItemApiController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\MenuCategoryController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\WhatsAppWebhookController;
-use App\Models\MenuItem;
-use App\Models\Order;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RestaurantController;
+use App\Models\Subscription;
 use Illuminate\Support\Facades\Route;
 
+// المسارات العامة
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 });
 
-// Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-// Route::post('/orders/test-store', [OrderController::class, 'testStore'])->name('orders.testStore');
-// Route::post('/orders/{order}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
-// Route::patch('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
-// Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
-// // مسارات لوحة التحكم والعمليات الأساسية (Resource)
-// Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-// Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-// Route::put('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
-// Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
+Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
-// مسارات بوابة الدفع الإلكتروني (FR-10, FR-15)
-Route::get('/payment/checkout/{token}', [OrderController::class, 'showPaymentPage'])->name('payment.checkout');
-Route::post('/payment/process/{token}', [OrderController::class, 'processPayment'])->name('payment.process');
-Route::get('/payment/success/{token}', [OrderController::class, 'paymentSuccessView'])->name('payment.success');
+require __DIR__.'/auth.php';
 
-// مسار استقبال الطلبات عبر الـ API
-// Route::post('/api/orders', [OrderController::class, 'storeApi']);
+Route::get('/notifications/mark-as-read', function () {
+    if (Auth::check()) {
+        Auth::user()->unreadNotifications->markAsRead();
+    }
+    return response()->json(['success' => true]);
+})->name('notifications.read');
 
-Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle']);
+// مسارات لوحة التحكم والمميزات (محمية بالكامل وتتطلب اشتراكاً سارياً عبر subscribed)
+Route::middleware(['auth', 'verified', 'subscribed'])->group(function () {
 
+    // لوحة التحكم الرئيسية
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// Route::resource('menu-items', MenuItemController::class);
-// Route::get('/admin/orders', [OrderDashboardController::class, 'index']);
-// Route::match(['post', 'patch'], '/orders/{id}/update-status', [OrderController::class, 'updateStatus']);
-// مسارات الطلبات واللوحة
-Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-Route::patch('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
+    // الملف الشخصي
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-// ربط اسم المسار القديم updateStatus بدالة update الموجودة في الكنترولر مباشرة
-Route::match(['post', 'patch'], '/orders/{id}/update-status', [OrderController::class, 'update'])->name('orders.updateStatus');
+    // الطلبات الحية والفواتير الخاصة بالطلبات (بدون تكرار)
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::match(['post', 'put', 'patch'], '/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
 
-Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
+    // مسار عرض الفاتورة الخاصة بالطلب
+    Route::get('/orders/{id}/invoice', [OrderController::class, 'showInvoice'])->name('orders.invoice');
 
-// مسارات بوابة الدفع الإلكتروني (FR-10, FR-15)
-Route::get('/payment/checkout/{token}', [OrderController::class, 'showPaymentPage'])->name('payment.checkout');
-Route::post('/payment/process/{token}', [OrderController::class, 'processPayment'])->name('payment.process');
-Route::get('/payment/success/{token}', [OrderController::class, 'paymentSuccessView'])->name('payment.success');
+    // المنيو والأقسام
+    Route::get('/categories', [MenuCategoryController::class, 'index'])->name('categories.index');
+    Route::get('/categories/create', [MenuCategoryController::class, 'create'])->name('categories.create');
+    Route::post('/categories', [MenuCategoryController::class, 'store'])->name('categories.store');
+    Route::get('/categories/{id}/edit', [MenuCategoryController::class, 'edit'])->name('categories.edit');
+    Route::put('/categories/{id}', [MenuCategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{id}', [MenuCategoryController::class, 'destroy'])->name('categories.destroy');
 
-Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle']);
+    // راوت الأطباق (Menu Items) باستخدام Resource
+    Route::resource('menu-items', MenuItemController::class);
 
-Route::resource('menu-items', MenuItemController::class);
-Route::get('/admin/orders', [OrderDashboardController::class, 'index']);
+    // إعدادات المطعم وإدارة الموظفين
+    Route::get('/restaurant/settings', [RestaurantController::class, 'edit'])->name('restaurant.settings');
+    Route::match(['post', 'put', 'patch'], '/restaurant/settings', [RestaurantController::class, 'update'])->name('restaurant.settings.update');
+    Route::post('/restaurant/settings/toggle', [RestaurantController::class, 'toggleStatus'])->name('restaurant.settings.toggle');
+
+    Route::get('/restaurant/staff', [RestaurantController::class, 'staffIndex'])->name('restaurant.staff');
+    Route::post('/restaurant/staff', [RestaurantController::class, 'storeStaff'])->name('restaurant.staff.store');
+    Route::post('/restaurant/staff/{id}/update-role', [RestaurantController::class, 'updateRole'])->name('restaurant.staff.update-role');
+
+    // التحليلات
+    Route::get('/analytics', [OrderController::class, 'analytics']);
+
+    // نظام الفواتير العام (InvoiceController)
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+
+    // مسارات إدارة المطعم والتقارير والـ VIP (تحت بادئة admin لتعمل مع الـ Layout)
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/customers/vip', [OrderController::class, 'vipCustomers'])->name('customers.vip');
+        Route::get('/reports', [OrderController::class, 'reportsIndex'])->name('reports.index');
+    });
+
+    // الدفع
+    Route::get('/checkout/{token}', [OrderController::class, 'showPaymentPage'])->name('payment.checkout');
+    Route::post('/checkout/{token}', [OrderController::class, 'processPayment'])->name('payment.process');
+    Route::get('/payment/success/{token}', [OrderController::class, 'paymentSuccessView'])->name('payment.success');
+});
+
+// نظام الاشتراكات (متروك خارج حماية الـ subscribed لكي يتمكن المطعم من التجديد عند انتهاء الاشتراك)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::post('/subscription', [SubscriptionController::class, 'store'])->name('subscription.store');
+});
