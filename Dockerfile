@@ -19,8 +19,9 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
 
-# إنشاء ملف قاعدة بيانات sqlite فارغ وضبط الصلاحيات
-RUN mkdir -p database && touch database/database.sqlite \
+# إنشاء مجلدات التخزين وقاعدة البيانات والصلاحيات
+RUN mkdir -p database storage/framework/sessions storage/framework/views storage/framework/cache \
+    && touch database/database.sqlite \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/database /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/database /var/www/html/bootstrap/cache
 
@@ -32,4 +33,5 @@ RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf /etc/apache2/sites-available/0
 
 EXPOSE 10000
 
+# مسح الكاش وتشغيل أباتشي مباشرة
 CMD php artisan config:clear && php artisan cache:clear && apache2-foreground
