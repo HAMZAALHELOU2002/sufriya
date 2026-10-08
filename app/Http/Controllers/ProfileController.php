@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,55 +14,66 @@ class ProfileController extends Controller
      * Display the user's profile form.
      */
     public function edit(Request $request): View
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
 
-    // جلب أول مطعم مرتبط بهذا المستخدم عبر جدول restaurant_users
-    $restaurant = $user->restaurants()->first();
+        // جلب المطعم المرتبط بالمستخدم
+        $restaurant = $user->restaurants()->first();
 
-    return view('profile.edit', [
-        'user' => $user,
-        'restaurant' => $restaurant,
-    ]);
-}
+        return view('profile.edit', [
+            'user' => $user,
+            'restaurant' => $restaurant,
+        ]);
+    }
 
     /**
      * Update the user's profile information.
      */
-   public function update(Request $request): RedirectResponse
-{
-    $user = $request->user();
+    public function update(Request $request): RedirectResponse
+    {
+        $user = $request->user();
 
-    // التحقق من صحة المدخلات (للمستخدم وللمطعم)
-    $validated = $request->validate([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
-        'restaurant_name' => ['nullable', 'string', 'max:255'],
-        'whatsapp_phone_number_id' => ['nullable', 'string', 'max:255'],
-    ]);
-
-    // تحديث بيانات المستخدم
-    $user->fill([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-    ]);
-
-    if ($user->isDirty('email')) {
-        $user->email_verified_at = null;
-    }
-    $user->save();
-
-    // تحديث بيانات المطعم المرتبط إن وجدت
-    $restaurant = $user->restaurants()->first();
-    if ($restaurant && isset($validated['restaurant_name'])) {
-        $restaurant->update([
-            'name' => $validated['restaurant_name'],
-            'whatsapp_phone_number_id' => $validated['whatsapp_phone_number_id'] ?? $restaurant->whatsapp_phone_number_id,
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                'unique:users,email,' . $user->id,
+            ],
+            'restaurant_name' => ['nullable', 'string', 'max:255'],
+            'whatsapp_phone_number_id' => ['nullable', 'string', 'max:255'],
         ]);
-    }
 
-    return Redirect::route('profile.edit')->with('status', 'profile-updated');
-}
+        // تحديث بيانات المستخدم
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        // تحديث بيانات المطعم المرتبط
+        $restaurant = $user->restaurants()->first();
+
+        if ($restaurant) {
+            $restaurant->update([
+                'name' => $validated['restaurant_name']
+                    ?? $restaurant->name,
+                'whatsapp_phone_number_id' => $validated['whatsapp_phone_number_id']
+                    ?? $restaurant->whatsapp_phone_number_id,
+            ]);
+        }
+
+        return Redirect::route('profile.edit')
+            ->with('status', 'profile-updated');
+    }
 
     /**
      * Delete the user's account.

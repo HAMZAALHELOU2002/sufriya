@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class MenuCategoryController extends Controller
 {
-    private function getCurrentRestaurantId()
+    private function getCurrentRestaurantId(): ?int
     {
-        $restaurantUser = DB::table('restaurant_users')
+        return DB::table('restaurant_users')
             ->where('user_id', Auth::id())
-            ->first();
-
-        return $restaurantUser ? $restaurantUser->restaurant_id : DB::table('restaurants')->value('id');
+            ->value('restaurant_id');
     }
 
     public function index()
@@ -22,12 +21,11 @@ class MenuCategoryController extends Controller
         $restaurantId = $this->getCurrentRestaurantId();
 
         if (!$restaurantId) {
-            return redirect()->back()->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+            return redirect()->back()
+                ->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
         }
 
-        // جلب الأقسام مع الترتيب الصحيح
-        $categories = DB::table('menu_categories')
-            ->where('restaurant_id', $restaurantId)
+        $categories = MenuCategory::where('restaurant_id', $restaurantId)
             ->orderBy('sort_order', 'asc')
             ->get();
 
@@ -36,6 +34,13 @@ class MenuCategoryController extends Controller
 
     public function create()
     {
+        $restaurantId = $this->getCurrentRestaurantId();
+
+        if (!$restaurantId) {
+            return redirect()->back()
+                ->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+        }
+
         return view('categories.create');
     }
 
@@ -44,7 +49,8 @@ class MenuCategoryController extends Controller
         $restaurantId = $this->getCurrentRestaurantId();
 
         if (!$restaurantId) {
-            return redirect()->back()->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+            return redirect()->back()
+                ->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
         }
 
         $request->validate([
@@ -53,31 +59,36 @@ class MenuCategoryController extends Controller
             'sort_order' => 'nullable|integer',
         ]);
 
-        DB::table('menu_categories')->insert([
+        MenuCategory::create([
             'restaurant_id' => $restaurantId,
             'name' => $request->name,
             'description' => $request->description,
             'sort_order' => $request->sort_order ?? 0,
-            'is_active' => 1, // افتراضياً مفعل لكي يظهر مباشرة
-            'created_at' => now(),
-            'updated_at' => now(),
+            'is_active' => true,
         ]);
 
-        // التعديل هنا: التوجيه لصفحة الـ index بدلاً من back()
-        return redirect()->route('categories.index')->with('success', 'تم إضافة القسم بنجاح!');
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'تم إضافة القسم بنجاح!');
     }
 
     public function edit($id)
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
-        $category = DB::table('menu_categories')
-            ->where('id', $id)
+        if (!$restaurantId) {
+            return redirect()->route('categories.index')
+                ->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+        }
+
+        $category = MenuCategory::where('id', $id)
             ->where('restaurant_id', $restaurantId)
             ->first();
 
         if (!$category) {
-            return redirect()->route('categories.index')->with('error', 'القسم غير موجود أو ليس لديك صلاحية.');
+            return redirect()
+                ->route('categories.index')
+                ->with('error', 'القسم غير موجود أو ليس لديك صلاحية.');
         }
 
         return view('categories.edit', compact('category'));
@@ -87,13 +98,22 @@ class MenuCategoryController extends Controller
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
-        $category = DB::table('menu_categories')
-            ->where('id', $id)
+        if (!$restaurantId) {
+            return redirect()->route('categories.index')
+                ->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+        }
+
+        $category = MenuCategory::where('id', $id)
             ->where('restaurant_id', $restaurantId)
             ->first();
 
         if (!$category) {
-            return redirect()->route('categories.index')->with('error', 'القسم غير موجود أو ليس لديك صلاحية لتعديله.');
+            return redirect()
+                ->route('categories.index')
+                ->with(
+                    'error',
+                    'القسم غير موجود أو ليس لديك صلاحية لتعديله.'
+                );
         }
 
         $request->validate([
@@ -102,33 +122,44 @@ class MenuCategoryController extends Controller
             'sort_order' => 'nullable|integer',
         ]);
 
-        DB::table('menu_categories')->where('id', $id)->update([
+        $category->update([
             'name' => $request->name,
             'description' => $request->description,
             'sort_order' => $request->sort_order ?? 0,
-            'is_active' => $request->has('is_active') ? 1 : 0,
-            'updated_at' => now(),
+            'is_active' => $request->has('is_active'),
         ]);
 
-        // التعديل هنا: التوجيه لصفحة الـ index بدلاً من back() ليعرض رسالة النجاح ويعود للجدول
-        return redirect()->route('categories.index')->with('success', 'تم تحديث البيانات بنجاح!');
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'تم تحديث البيانات بنجاح!');
     }
 
     public function destroy($id)
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
-        $category = DB::table('menu_categories')
-            ->where('id', $id)
+        if (!$restaurantId) {
+            return redirect()->route('categories.index')
+                ->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+        }
+
+        $category = MenuCategory::where('id', $id)
             ->where('restaurant_id', $restaurantId)
             ->first();
 
         if (!$category) {
-            return redirect()->back()->with('error', 'القسم غير موجود أو ليس لديك صلاحية لحذفه.');
+            return redirect()
+                ->route('categories.index')
+                ->with(
+                    'error',
+                    'القسم غير موجود أو ليس لديك صلاحية لحذفه.'
+                );
         }
 
-        DB::table('menu_categories')->where('id', $id)->delete();
+        $category->delete();
 
-        return redirect()->route('categories.index')->with('success', 'تم حذف القسم بنجاح!');
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'تم حذف القسم بنجاح!');
     }
 }

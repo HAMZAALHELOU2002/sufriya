@@ -15,42 +15,64 @@ class MenuItemController extends Controller
     /**
      * جلب معرف المطعم المرتبط بالحساب الحالي
      */
-    private function getCurrentRestaurantId()
+    private function getCurrentRestaurantId(): ?int
     {
-        $restaurantUser = DB::table('restaurant_users')
+        return DB::table('restaurant_users')
             ->where('user_id', Auth::id())
-            ->first();
-
-        return $restaurantUser ? $restaurantUser->restaurant_id : DB::table('restaurants')->value('id');
+            ->value('restaurant_id');
     }
 
     /**
      * عرض قائمة الوجبات
      */
-   public function index()
-{
-    $restaurantId = $this->getCurrentRestaurantId();
+    public function index()
+    {
+        $restaurantId = $this->getCurrentRestaurantId();
 
-    // جلب الأطباق مع أسماء الأقسام مباشرة باستخدام Join
-    $menuItems = DB::table('menu_items')
-        ->join('menu_categories', 'menu_items.category_id', '=', 'menu_categories.id')
-        ->where('menu_items.restaurant_id', $restaurantId)
-        ->select('menu_items.*', 'menu_categories.name as category_name')
-        ->get();
+        if (!$restaurantId) {
+            return view('menu.index', [
+                'menuItems' => collect(),
+                'categories' => collect(),
+            ]);
+        }
 
-    // جلب الأقسام لتظهر في القائمة المنسدلة للإضافة والتعديل
-    $categories = DB::table('menu_categories')->where('restaurant_id', $restaurantId)->get();
+        // جلب الأطباق مع أسماء الأقسام
+        $menuItems = DB::table('menu_items')
+            ->leftJoin(
+                'menu_categories',
+                'menu_items.category_id',
+                '=',
+                'menu_categories.id'
+            )
+            ->where('menu_items.restaurant_id', $restaurantId)
+            ->select(
+                'menu_items.*',
+                'menu_categories.name as category_name'
+            )
+            ->get();
 
-    return view('menu.index', compact('menuItems', 'categories'));
-}
+        // جلب أقسام المطعم فقط
+        $categories = MenuCategory::where(
+            'restaurant_id',
+            $restaurantId
+        )->get();
+
+        return view(
+            'menu.index',
+            compact('menuItems', 'categories')
+        );
+    }
 
     /**
-     * صفحة إنشاء وجبة جديدة (في حال استخدام صفحة منفصلة)
+     * صفحة إنشاء وجبة جديدة
      */
     public function create()
     {
         $restaurantId = $this->getCurrentRestaurantId();
-        $categories = $restaurantId ? MenuCategory::where('restaurant_id', $restaurantId)->get() : collect();
+
+        $categories = $restaurantId
+            ? MenuCategory::where('restaurant_id', $restaurantId)->get()
+            : collect();
 
         return view('menu.create', compact('categories'));
     }
@@ -60,15 +82,23 @@ class MenuItemController extends Controller
      */
     public function store(Request $request)
     {
+        $restaurantId = $this->getCurrentRestaurantId();
+
+        if (!$restaurantId) {
+            return back()->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:menu_categories,id',
+            'category_id' => [
+                'required',
+                Rule::exists('menu_categories', 'id')
+                    ->where('restaurant_id', $restaurantId),
+            ],
             'price' => 'required|numeric|min:0',
             'image_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
         ]);
-
-        $restaurantId = $this->getCurrentRestaurantId();
 
         $data = [
             'restaurant_id' => $restaurantId,
@@ -76,35 +106,49 @@ class MenuItemController extends Controller
             'category_id' => $request->category_id,
             'price' => $request->price,
             'description' => $request->description,
-            'is_available' => 1, // متوفر افتراضياً عند الإضافة
-            'created_at' => now(),
-            'updated_at' => now(),
+            'is_available' => true,
         ];
 
-        // التحقق من رفع الصورة وحفظها باستخدام العمود الصحيح image_path
+        // رفع الصورة
         if ($request->hasFile('image_path')) {
-            $data['image_path'] = $request->file('image_path')->store('menu-items', 'public');
+            $data['image_path'] = $request
+                ->file('image_path')
+                ->store('menu-items', 'public');
         }
 
-        DB::table('menu_items')->insert($data);
+        MenuItem::create($data);
 
-        return redirect()->route('menu-items.index')->with('success', 'تم إضافة الوجبة بنجاح');
+        return redirect()
+            ->route('menu-items.index')
+            ->with('success', 'تم إضافة الوجبة بنجاح');
     }
 
+    /**
+     * إضافة قسم جديد
+     */
     public function storeCategory(Request $request)
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
+        if (!$restaurantId) {
+            return back()->with('error', 'لا يوجد مطعم مرتبط بحسابك.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
         ]);
 
         MenuCategory::create([
             'restaurant_id' => $restaurantId,
             'name' => $request->name,
+            'description' => $request->description,
         ]);
 
-        return back()->with('success', 'تم إضافة القسم بنجاح، يمكنك الآن اختيار إضافته للأطباق!');
+        return back()->with(
+            'success',
+            'تم إضافة القسم بنجاح، يمكنك الآن اختياره للأطباق.'
+        );
     }
 
     /**
@@ -114,13 +158,21 @@ class MenuItemController extends Controller
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
-        if ($menuItem->restaurant_id !== $restaurantId) {
-            return redirect()->route('menu-items.index')->with('error', 'غير مصرح لك بتعديل هذه الوجبة.');
+        if (!$restaurantId || $menuItem->restaurant_id != $restaurantId) {
+            return redirect()
+                ->route('menu-items.index')
+                ->with('error', 'غير مصرح لك بتعديل هذه الوجبة.');
         }
 
-        $categories = MenuCategory::where('restaurant_id', $restaurantId)->get();
+        $categories = MenuCategory::where(
+            'restaurant_id',
+            $restaurantId
+        )->get();
 
-        return view('menu.edit', compact('menuItem', 'categories'));
+        return view(
+            'menu.edit',
+            compact('menuItem', 'categories')
+        );
     }
 
     /**
@@ -130,40 +182,51 @@ class MenuItemController extends Controller
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
-        if ($menuItem->restaurant_id !== $restaurantId) {
-            return redirect()->route('menu-items.index')->with('error', 'غير مصرح لك بتعديل هذه الوجبة.');
+        if (!$restaurantId || $menuItem->restaurant_id != $restaurantId) {
+            return redirect()
+                ->route('menu-items.index')
+                ->with('error', 'غير مصرح لك بتعديل هذه الوجبة.');
         }
 
         $request->validate([
-            'name'        => 'required|string|max:255',
-            'price'       => 'required|numeric|min:0',
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
             'category_id' => [
                 'required',
-                Rule::exists('menu_categories', 'id')->where('restaurant_id', $restaurantId),
+                Rule::exists('menu_categories', 'id')
+                    ->where('restaurant_id', $restaurantId),
             ],
-            'image_path'  => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
         ]);
 
         $data = [
-            'category_id'  => $request->category_id,
-            'name'         => $request->name,
-            'price'        => $request->price,
-            'description'  => $request->description,
-            'is_available' => $request->has('is_available') ? 1 : 0,
+            'category_id' => $request->category_id,
+            'name' => $request->name,
+            'price' => $request->price,
+            'description' => $request->description,
+            'is_available' => $request->has('is_available'),
         ];
 
-        // رفع صورة جديدة وحذف الصورة القديمة من السيرفر باستخدام image_path
+        // رفع صورة جديدة وحذف القديمة
         if ($request->hasFile('image_path')) {
-            if ($menuItem->image_path && Storage::disk('public')->exists($menuItem->image_path)) {
+            if (
+                $menuItem->image_path &&
+                Storage::disk('public')->exists($menuItem->image_path)
+            ) {
                 Storage::disk('public')->delete($menuItem->image_path);
             }
-            $data['image_path'] = $request->file('image_path')->store('menu-items', 'public');
+
+            $data['image_path'] = $request
+                ->file('image_path')
+                ->store('menu-items', 'public');
         }
 
         $menuItem->update($data);
 
-        return redirect()->route('menu-items.index')->with('success', 'تم تحديث الوجبة بنجاح');
+        return redirect()
+            ->route('menu-items.index')
+            ->with('success', 'تم تحديث الوجبة بنجاح');
     }
 
     /**
@@ -173,17 +236,24 @@ class MenuItemController extends Controller
     {
         $restaurantId = $this->getCurrentRestaurantId();
 
-        if ($menuItem->restaurant_id !== $restaurantId) {
-            return redirect()->route('menu-items.index')->with('error', 'غير مصرح لك بحذف هذه الوجبة.');
+        if (!$restaurantId || $menuItem->restaurant_id != $restaurantId) {
+            return redirect()
+                ->route('menu-items.index')
+                ->with('error', 'غير مصرح لك بحذف هذه الوجبة.');
         }
 
-        // حذف الصورة من ملف التخزين باستخدام image_path
-        if ($menuItem->image_path && Storage::disk('public')->exists($menuItem->image_path)) {
+        // حذف الصورة
+        if (
+            $menuItem->image_path &&
+            Storage::disk('public')->exists($menuItem->image_path)
+        ) {
             Storage::disk('public')->delete($menuItem->image_path);
         }
 
         $menuItem->delete();
 
-        return redirect()->route('menu-items.index')->with('success', 'تم حذف الوجبة بنجاح');
+        return redirect()
+            ->route('menu-items.index')
+            ->with('success', 'تم حذف الوجبة بنجاح');
     }
 }

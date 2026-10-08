@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('customers', function (Blueprint $table) {
-            $table->integer('total_orders')->default(0);
-        $table->decimal('total_spend', 10, 2)->default(0.00);
-        $table->timestamp('last_order_at')->nullable();
-        $table->boolean('is_vip')->default(false);
-        });
+       Schema::table('customers', function (Blueprint $table) {
+    $table->integer('total_orders')->default(0);
+    $table->decimal('total_spend', 10, 2)->default(0.00);
+    $table->boolean('is_vip')->default(false);
+});
     }
 
     /**
@@ -25,7 +24,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('customers', function (Blueprint $table) {
-        $table->dropColumn(['total_orders', 'total_spend', 'last_order_at', 'is_vip']);
+        $table->dropColumn(['total_orders', 'total_spend', 'is_vip']);
+
     });
     }
 };

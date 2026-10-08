@@ -16,6 +16,7 @@
   <!-- Theme style AdminLTE -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
   <style>
+
     body {
       font-family: 'Cairo', sans-serif;
       direction: rtl;
@@ -64,6 +65,8 @@
   </style>
   @yield('styles')
 </head>
+@stack('scripts')
+</body>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 

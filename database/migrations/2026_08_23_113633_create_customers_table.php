@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->timestamp('last_ordered_at')->nullable();
             $table->timestamps();
-            $table->index(['restaurant_id', 'wa_phone_number']);
-        });
+            $table->unique(['restaurant_id', 'wa_phone_number']);
+    });
     }
 
     /**

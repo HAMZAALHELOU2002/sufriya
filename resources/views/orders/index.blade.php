@@ -253,6 +253,10 @@
 <script>
     window.Pusher = Pusher;
 
+    const restaurantId = "{{ $restaurantId ?? '' }}";
+
+    console.log('Restaurant ID:', restaurantId);
+
     window.Echo = new Echo({
         broadcaster: 'pusher',
         key: "{{ config('broadcasting.connections.pusher.key') }}",
@@ -260,77 +264,154 @@
         forceTLS: true
     });
 
-    const restaurantId = "{{ $restaurantId ?? '' }}";
+    console.log('Echo initialized');
 
-    // تجهيز صوت التنبيه (رنين جرس مخصص من مصدر موثوق وسريع)
-    const orderSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    const orderSound = new Audio(
+        'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'
+    );
 
     if (restaurantId) {
-        window.Echo.channel('restaurant.' + restaurantId)
-            .listen('.new.order', (e) => {
-                console.log('طلب جديد وصل:', e.order);
 
-                // 1. تشغيل صوت التنبيه فوراً
-                orderSound.play().catch(error => {
-                    console.log("متصفح الويب منع التشغيل التلقائي حتى يتم تفاعل المستخدم مع الصفحة:", error);
+        const channelName = 'restaurant.' + restaurantId;
+
+        console.log(
+            'Listening on channel:',
+            channelName
+        );
+
+        window.Echo
+            .channel(channelName)
+            .listen('.new.order', function (event) {
+
+                console.log(
+                    '🔥 NEW ORDER EVENT RECEIVED:',
+                    event
+                );
+
+                console.log(
+                    'Order:',
+                    event.order
+                );
+
+                // تشغيل الصوت
+                orderSound.play().catch(function (error) {
+                    console.log(
+                        'Audio blocked by browser:',
+                        error
+                    );
                 });
 
-                // 2. إظهار الـ Toast العصري
+                // التنبيه
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
                     icon: 'success',
-                    title: '🔔 وصل طلب جديد #' + e.order.id,
-                    text: 'المبلغ: ' + e.order.total_price + ' ر.س',
+                    title: '🔔 طلب جديد #' + event.order.id,
+                    text:
+                        'الإجمالي: ' +
+                        event.order.total_price,
                     showConfirmButton: false,
-                    timer: 5000,
+                    timer: 6000,
                     timerProgressBar: true
                 });
 
-                // 3. تحديث عداد الإشعارات (الجرس) فوراً برمجياً
-                const badge = document.getElementById('notification-badge');
+                // تحديث عداد الإشعارات
+                const badge =
+                    document.getElementById(
+                        'notification-badge'
+                    );
+
                 if (badge) {
-                    let currentCount = parseInt(badge.textContent) || 0;
-                    currentCount += 1;
-                    badge.textContent = currentCount;
-                    badge.style.display = 'inline-block';
+                    let count =
+                        parseInt(badge.textContent) || 0;
+
+                    count++;
+
+                    badge.textContent = count;
+                    badge.style.display =
+                        'inline-block';
                 }
 
-                // 4. تحديث قائمة الإشعارات المنسدلة فوراً
-                const headerCount = document.getElementById('notification-header-count');
+                // تحديث عدد الإشعارات
+                const headerCount =
+                    document.getElementById(
+                        'notification-header-count'
+                    );
+
                 if (headerCount) {
-                    let currentCount = parseInt(headerCount.textContent) || 0;
-                    headerCount.textContent = (currentCount + 1) + ' إشعارات جديدة';
+                    let count =
+                        parseInt(
+                            headerCount.textContent
+                        ) || 0;
+
+                    headerCount.textContent =
+                        (count + 1) +
+                        ' إشعارات جديدة';
                 }
 
-                const noNotifMsg = document.getElementById('no-notifications-msg');
+                // إزالة رسالة لا توجد إشعارات
+                const noNotifMsg =
+                    document.getElementById(
+                        'no-notifications-msg'
+                    );
+
                 if (noNotifMsg) {
                     noNotifMsg.remove();
                 }
 
-                const listContainer = document.getElementById('notifications-list-container');
+                // إضافة الإشعار للقائمة
+                const listContainer =
+                    document.getElementById(
+                        'notifications-list-container'
+                    );
+
                 if (listContainer) {
-                    const newNotificationItem = document.createElement('div');
-                    newNotificationItem.innerHTML = `
-                        <a href="/orders" class="dropdown-item py-2 bg-light">
+
+                    const wrapper =
+                        document.createElement('div');
+
+                    wrapper.innerHTML = `
+                        <a href="{{ route('orders.index') }}"
+                           class="dropdown-item py-2 bg-light">
+
                             <div class="media align-items-center">
+
                                 <i class="fas fa-shopping-cart text-primary fa-lg ml-3"></i>
+
                                 <div class="media-body">
-                                    <p class="text-sm font-weight-bold text-dark mb-0">طلب جديد وارد رقم #${e.order.id}</p>
-                                    <p class="text-muted text-xs mb-0"><i class="far fa-clock ml-1"></i>الآن</p>
+
+                                    <p class="text-sm font-weight-bold text-dark mb-0">
+                                        طلب جديد وارد رقم #${event.order.id}
+                                    </p>
+
+                                    <p class="text-muted text-xs mb-0">
+                                        <i class="far fa-clock ml-1"></i>
+                                        الآن
+                                    </p>
+
                                 </div>
+
                             </div>
+
                         </a>
+
                         <div class="dropdown-divider"></div>
                     `;
-                    listContainer.prepend(newNotificationItem);
+
+                    listContainer.prepend(wrapper);
                 }
 
-                // 5. تحديث الجدول بعد ثانيتين ليرى الطلب الجديد مضافاً
-                setTimeout(() => {
+                // تحديث الصفحة حتى يظهر الطلب في الجدول
+                setTimeout(function () {
                     location.reload();
-                }, 2000);
+                }, 1500);
             });
+
+    } else {
+
+        console.error(
+            '❌ Restaurant ID is missing.'
+        );
     }
 </script>
 @endpush

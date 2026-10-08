@@ -7,11 +7,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderStatusHistory extends Model
 {
-    public $timestamps = false; // نستخدم فقط created_at
+    public $timestamps = false;
 
     protected $table = 'order_status_history';
 
-    protected $fillable = ['order_id', 'from_status', 'to_status', 'triggered_by', 'created_at'];
+    protected $fillable = [
+        'order_id',
+        'from_status',
+        'to_status',
+        'triggered_by',
+        'created_at',
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
 
     public function order(): BelongsTo
     {

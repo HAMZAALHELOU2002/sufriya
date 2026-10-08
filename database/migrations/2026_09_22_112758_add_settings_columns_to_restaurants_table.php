@@ -18,9 +18,7 @@ return new class extends Migration
             if (!Schema::hasColumn('restaurants', 'whatsapp_phone_number_id')) {
                 $table->string('whatsapp_phone_number_id')->nullable();
             }
-            if (!Schema::hasColumn('restaurants', 'address')) {
-                $table->text('address')->nullable();
-            }
+            
         });
     }
 

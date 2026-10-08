@@ -8,7 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrderItem extends Model
 {
     protected $fillable = [
-        'order_id', 'menu_item_id', 'item_name', 'unit_price', 'quantity', 'subtotal'
+        'order_id',
+        'menu_item_id',
+        'item_name',
+        'unit_price',
+        'quantity',
+        'subtotal',
     ];
 
     protected $casts = [
@@ -26,5 +31,4 @@ class OrderItem extends Model
     {
         return $this->belongsTo(MenuItem::class);
     }
-    
 }

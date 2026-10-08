@@ -6,12 +6,6 @@ return [
     |--------------------------------------------------------------------------
     | Third Party Services
     |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
     */
 
     'postmark' => [
@@ -34,22 +28,37 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
     'whatsapp' => [
-    'verify_token'     => env('WHATSAPP_VERIFY_TOKEN', 'my_secret_token_123'),
-    'token'            => env('WHATSAPP_TOKEN'),
-    'phone_account_id' => env('WHATSAPP_PHONE_ACCOUNT_ID'),
+
+        /*
+        |--------------------------------------------------------------------------
+        | WhatsApp Cloud API
+        |--------------------------------------------------------------------------
+        */
+
+        'api_version' => env(
+            'WHATSAPP_API_VERSION',
+            'v21.0'
+        ),
+
+        'phone_number_id' => env(
+            'WHATSAPP_PHONE_NUMBER_ID'
+        ),
+
+        'access_token' => env(
+            'WHATSAPP_ACCESS_TOKEN'
+        ),
+
+        'verify_token' => env(
+            'WHATSAPP_VERIFY_TOKEN'
+        ),
     ],
 
-    'whatsapp' => [
-    'token' => env('WHATSAPP_TOKEN'),
-    'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
-    'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'my_secret_token_123'),
-],
-
-'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect' => env('GOOGLE_REDIRECT_URI'),
-],
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
 
 ];

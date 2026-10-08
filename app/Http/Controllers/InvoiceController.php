@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
-    /**
-     * جلب معرف المطعم الحالي للمستخدم المجهّز حالياً.
-     */
+
+   //  جلب معرف المطعم الحالي للمستخدم المجهّز حالياً.
+
     private function getCurrentRestaurantId()
     {
         $restaurantUser = DB::table('restaurant_users')

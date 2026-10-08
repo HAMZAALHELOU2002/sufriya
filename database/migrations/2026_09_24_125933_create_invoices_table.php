@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('restaurant_id')->constrained()->onDelete('cascade');
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('order_id')->constrained()->onDelete('restrictOnDelete');
             $table->foreignId('customer_id')->nullable()->constrained()->onDelete('set null');
 
             $table->string('invoice_number')->unique(); // رقم الفاتورة التسلسلي (مثال: INV-2026-0001)

@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Api\MenuItemApiController;
 use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MenuCategoryController;
@@ -19,9 +18,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('landing');
 });
-
-Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
 require __DIR__.'/auth.php';
 

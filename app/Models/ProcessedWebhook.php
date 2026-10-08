@@ -11,5 +11,8 @@ class ProcessedWebhook extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    protected $casts = [
+    'processed_at' => 'datetime',
+];
     protected $fillable = ['event_id', 'processed_at'];
 }

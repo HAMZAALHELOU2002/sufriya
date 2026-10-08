@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('restaurant_id')->nullable()->constrained()->onDelete('cascade');
-                $table->foreignId('customer_id')->nullable()->constrained()->onDelete('cascade');
+                $table->foreignId('customer_id')->nullable()->constrained() ->nullOnDelete();
+                $table->string('customer_name')->nullable();
+                $table->string('customer_phone')->nullable();
+                $table->string('delivery_address')->nullable();
                 $table->enum('fulfillment_type', ['pickup', 'delivery'])->default('pickup');
                 $table->enum('status', ['pending_acceptance', 'accepted', 'preparing', 'ready', 'completed', 'cancelled', 'expired'])->default('pending_acceptance');
                 $table->enum('payment_method', ['online', 'cash'])->default('cash');
