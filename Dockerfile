@@ -1,28 +1,41 @@
-FROM php:8.2-cli
+FROM php:8.2-apache
 
-WORKDIR /var/www/html
-
-# تثبيت الحزم المطلوبة
+# تثبيت الحزم المطلوبة للارافيل
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip
+    unzip \
+    git \
+    curl
+
+# تفعيل وحدات أباتشي المطلوبة
+RUN a2enmod rewrite
 
 # تثبيت Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# تحديد مجلد العمل
+WORKDIR /var/www/html
+
 # نسخ ملفات المشروع
 COPY . .
 
-# تثبيت الاعتماديات
+# تثبيت الاعتماديات الخاصة بالإنتاج
 RUN composer install --no-dev --optimize-autoloader
 
-# ضبط الصلاحيات لمجلدات لارافيل
-RUN chmod -R 775 storage bootstrap/cache
+# تغيير مسار الـ DocumentRoot في أباتشي ليشير إلى مجلد public الخاص بلارافيل
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
-# تشغيل خادم لارافيل على البورت المطلوب من Render
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# ضبط الصلاحيات للمجلدات
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# ضبط البورت ليتوافق مع متطلبات Render (البورت 10000)
+RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
+
+EXPOSE 10000
+
+# تشغيل أباتشي
+CMD ["apache2-foreground"]
