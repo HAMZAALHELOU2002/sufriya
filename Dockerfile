@@ -31,4 +31,4 @@ RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf /etc/apache2/sites-available/0
 
 EXPOSE 10000
 
-CMD ["apache2-foreground"]
+CMD php artisan config:clear && php artisan cache:clear && apache2-foreground
