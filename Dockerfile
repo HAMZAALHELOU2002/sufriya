@@ -1,5 +1,7 @@
 FROM php:8.2-cli
 
+WORKDIR /var/www/html
+
 # تثبيت الحزم المطلوبة
 RUN apt-get update && apt-get install -y \
     git \
@@ -8,22 +10,19 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    unzip
 
 # تثبيت Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-WORKDIR /app
+# نسخ ملفات المشروع
 COPY . .
 
+# تثبيت الاعتماديات
 RUN composer install --no-dev --optimize-autoloader
 
-# ضبط الصلاحيات
-RUN chmod -R 777 storage bootstrap/cache
+# ضبط الصلاحيات لمجلدات لارافيل
+RUN chmod -R 775 storage bootstrap/cache
 
-# منفذ التشغيل الذي سيتعامل معه Render
-EXPOSE 10000
-
-# أمر التشغيل لخادم لارافيل المدمج
+# تشغيل خادم لارافيل على البورت المطلوب من Render
 CMD php artisan serve --host=0.0.0.0 --port=10000
