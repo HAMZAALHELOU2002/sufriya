@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: sufrija-1
+    env: php
+    plan: free
+    buildCommand: "composer install --no-dev --optimize-autoloader"
+    startCommand: "php -S 0.0.0.0:$PORT -t public"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: true
+      - key: APP_KEY
+        value: base64:Ru0fYKSGFPNDKVDBVa/zxukEzLukZMnZP8+VjeUk4xo=
+      - key: APP_URL
+        value: https://sufrija-1.onrender.com
