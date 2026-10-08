@@ -33,5 +33,5 @@ RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf /etc/apache2/sites-available/0
 
 EXPOSE 10000
 
-# مسح الكاش وتشغيل أباتشي مباشرة
-CMD php artisan config:clear && php artisan cache:clear && apache2-foreground
+# الحل النهائي: إنشاء الجداول تلقائياً عند الإقلاع
+CMD php artisan migrate --force && php artisan config:clear && php artisan cache:clear && apache2-foreground
